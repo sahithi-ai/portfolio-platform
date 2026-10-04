@@ -1,40 +1,21 @@
 # portfolio-platform
+One line: what this repo will contain when done, and for whom.
 
-Platform engineering portfolio: Kubernetes on AWS, provisioned and managed with Terraform.
+## Status
+Day 1 · Oct 4, 2026 · Streak 1 · Current milestone: Docker + CKA labs (Campaign 0, to Oct 31)
 
-This repo collects my hands-on platform engineering projects. Each one is built end to end: infrastructure, deployment and operations.
+## The plan
+Five repos, with one line each and a target date. Link the others when they exist.
 
-## Topics
+## Architecture (target)
+Keep your diagram. Add the pieces the plan actually promises:
+GitHub Actions (OIDC) → Terraform → EKS → Argo CD → app + Prometheus/Grafana.
 
-### Platform Engineering
-**What it is:** Platform engineering means designing and running an internal developer platform: a set of shared tools, infrastructure and automated workflows. Development teams use it to build, deploy and run software on their own, without filing tickets for infrastructure.
+## How to run it
+"Not yet runnable. First runnable milestone: <date>." Honesty beats a blank section.
 
-**Why it matters:** It turns repeated infrastructure work into reusable, self-service building blocks, sometimes called "golden paths." Teams ship faster and more consistently, and security and reliability are built in by default.
+## What broke
+Empty for now. This becomes the most-read section in the repo.
 
-### Kubernetes
-**What it is:** Kubernetes (K8s) is an open-source container orchestration system. It automates deploying, scaling and managing containerized applications across a cluster of machines.
-
-**Why it matters:** Kubernetes is the standard runtime layer for modern platforms. It handles scheduling, self-healing, rolling updates, service discovery and autoscaling. Workloads are described in declarative manifests, so they can be versioned and reviewed like code.
-
-### Terraform
-**What it is:** Terraform is an Infrastructure as Code (IaC) tool from HashiCorp. You define cloud and on-prem resources in declarative configuration files (HCL), then plan and apply changes to reach that desired state.
-
-**Why it matters:** Infrastructure becomes versioned, reviewable and repeatable. You can recreate an environment from code, catch changes before they happen with `terraform plan`, and package common patterns as reusable modules.
-
-### AWS
-**What it is:** Amazon Web Services (AWS) is a cloud computing platform. It offers on-demand compute, storage, networking, databases and managed services such as EC2, S3, VPC, IAM and EKS (managed Kubernetes).
-
-**Why it matters:** AWS provides the underlying infrastructure the platform runs on. Using its managed services means less low-level work, and the platform can scale with demand.
-
-## How they fit together
-
-```
-Terraform  ──provisions──▶  AWS (VPC, IAM, EKS, ...)
-                                 │
-                                 ▼
-                     Kubernetes (EKS cluster)
-                                 │
-                                 ▼
-          Platform Engineering: self-service tooling,
-          CI/CD, observability, and golden paths on top
-```
+## Daily log
+2026-10-04 — repo created; README; weak-list: Docker layer caching, Deployment vs Pod, Terraform state.
