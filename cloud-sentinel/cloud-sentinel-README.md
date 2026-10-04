@@ -13,7 +13,8 @@ Built as the first workload of a platform-engineering portfolio: the same image 
 | Regions | All regions enabled on the account |
 | Interface | `GET /findings` → JSON |
 | Runs on | Docker, locally |
-| Next | Non-root user, `HEALTHCHECK`, `.dockerignore`, Compose, named volume for findings, `/metrics` |
+| AWS identity | Dedicated read-only IAM user, three actions |
+| Next | Non-root container user, `gunicorn`, `HEALTHCHECK`, `.dockerignore`, Compose, named volume for findings, `/metrics` |
 
 ## What it found
 
@@ -53,11 +54,15 @@ docker run -p 8080:8080 \
 curl http://localhost:8080/findings
 ```
 
-The profile needs `ec2:DescribeRegions`, `ec2:DescribeSecurityGroups` and `sts:GetCallerIdentity`. Read-only; the scanner changes nothing.
+The profile needs only `ec2:DescribeRegions`, `ec2:DescribeSecurityGroups` and `sts:GetCallerIdentity`. The scanner runs under a dedicated read-only IAM user (`cloud-sentinel-ro`) with an inline policy allowing exactly those three actions — not an admin profile. Read-only; the scanner changes nothing.
+
+On macOS, `http://localhost:8080/findings` is the only way in. Flask also prints the container's bridge IP (`172.17.0.x`), which is reachable on a Linux host but not from a Mac — Docker Desktop runs the engine inside a Linux VM, and the bridge network lives there. See *Engineering notes*.
 
 ## Design decisions
 
 **Credentials are never in the image.** Nothing in the Dockerfile references AWS keys. At run time the host's `~/.aws` is mounted read-only and the profile name is passed as an environment variable; boto3's default credential chain finds it. Anything baked into an image lives in every layer, in every registry it is ever pushed to. On EKS this mount goes away entirely and the pod receives a role through Pod Identity / IRSA.
+
+**Least privilege on the AWS side.** The container runs as `cloud-sentinel-ro`, an IAM user whose only permissions are the three read-only actions the scan needs. Verified by running `aws ec2 describe-instances` under the same profile and getting `AccessDenied`. A container only ever holds the permissions of the identity it was given — if this one were compromised, the blast radius is "can list security groups," not "owns the account." Two separate "users" matter here: the Linux user the process runs as inside the container (`USER` in the Dockerfile — v0.1), and the AWS identity the process calls the API with (this one).
 
 **Every API call has a timeout.** `botocore.config.Config(connect_timeout=5, read_timeout=15, retries={'max_attempts': 2})` on every client. Without it, boto3's defaults (60-second connect, up to four attempts) turn an unreachable endpoint into minutes of silence. A region that cannot be reached now costs about ten seconds and is logged, and the scan continues.
 
@@ -78,6 +83,8 @@ The profile needs `ec2:DescribeRegions`, `ec2:DescribeSecurityGroups` and `sts:G
 - The first multi-region run hung for minutes on one region. `curl -m 5 https://ec2.me-south-1.amazonaws.com` timed out in five seconds — the endpoint was unreachable from my network, nothing in the code could have fixed it, only tolerated it. That became the timeout rule above. The region was in the list because of an `AllRegions=True` flag I had added while experimenting; the account API confirmed the region was disabled. Lesson: when two AWS APIs disagree about your own account, read the flags you passed before suspecting the service.
 - `docker run <image>` needs an image name; `.` belongs to `docker build .`. The container can't see the shell's exported `AWS_PROFILE` — the environment boundary is the whole point — so it is passed with `-e`.
 - Without a `USER` instruction the process runs as root and boto3 looks for credentials in `/root/.aws`. Once the image runs as a non-root user, the mount path moves to that user's home. Mounting to the wrong one fails with "Unable to locate credentials," not with a path error.
+- Flask started and printed three addresses. `127.0.0.1:8080` worked; `172.17.0.2:8080` loaded forever. The second is the container's IP on Docker's default bridge network. On a Linux host that address is routable from the host; on macOS the engine runs in a hidden Linux VM and the bridge lives inside it, so the Mac has no route to `172.17.x.x`. The published port (`-p 8080:8080`) is the only door in on a Mac. The `192.168.65.1` in the request log is the Mac itself as seen from inside the VM. Same idea one layer up: on Kubernetes, pods have their own IPs and a Service is the door.
+- Flask's built-in server warns that it is a development server. It is. v0.1 runs the app under `gunicorn`.
 
 ## Why this runs on Kubernetes and not Lambda
 
@@ -85,7 +92,7 @@ For a scan that runs once an hour, Lambda plus EventBridge is cheaper and simple
 
 ## Roadmap
 
-- **v0.1** — non-root user, `HEALTHCHECK`, `.dockerignore`, Compose file, findings persisted to a named volume
+- **v0.1** — non-root container user, `gunicorn` instead of the Flask dev server, `HEALTHCHECK`, `.dockerignore`, Compose file, findings persisted to a named volume
 - **v0.2** — `/metrics` in Prometheus format (`sentinel_findings_total{check,severity,region}`)
 - **v0.3** — second check: S3 buckets with public access; severity `CRITICAL` for "all traffic" rules
 - **Platform (Nov)** — CronJob on EKS via Argo CD, Terraform-provisioned, Pod Identity instead of mounted credentials, Grafana dashboard
