@@ -12,10 +12,10 @@ Keep your diagram. Add the pieces the plan actually promises:
 GitHub Actions (OIDC) → Terraform → EKS → Argo CD → app + Prometheus/Grafana.
 
 ## How to run it
-"Not yet runnable. First runnable milestone: <date>." Honesty beats a blank section.
+"Not yet runnable. First runnable milestone: <date>." 
 
 ## What broke
-Empty for now. This becomes the most-read section in the repo.
+Empty for now. 
 
 ## Daily log
 2026-10-04 — repo created; README; weak-list: Docker layer caching, Deployment vs Pod, Terraform state.
