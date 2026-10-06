@@ -1,0 +1,14 @@
+services:                      # one entry per container
+  sentinel:                    # service name; also its DNS name on the compose network
+    build: .                   # docker build .  — compose builds the image for you
+    ports:
+      - "8080:8080"            # -p host:container
+    volumes:
+      - ~/.aws:/home/app/.aws:ro       # bind mount
+      - sentinel-data:/data            # named volume
+    environment:
+      AWS_PROFILE: cloud-sentinel  # -e
+    restart: unless-stopped            # --restart
+
+volumes:
+  sentinel-data:               # declares the named volume; empty value = defaults
