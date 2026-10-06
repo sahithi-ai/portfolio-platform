@@ -3,6 +3,7 @@ WORKDIR /cloud-sentinel
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN useradd -m app
+RUN mkdir /data && chown app /data
 USER app
 COPY app.py .
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \

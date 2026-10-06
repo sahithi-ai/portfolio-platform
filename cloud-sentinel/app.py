@@ -1,6 +1,8 @@
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError, EndpointConnectionError, ConnectTimeoutError
+import os
+import json
 
 from flask import Flask, jsonify
 app = Flask(__name__)
@@ -17,6 +19,8 @@ SENSITIVE_PORTS = {
     6379: 'Redis',
     27017: 'MongoDB',
 }
+
+STATE_FILE = os.environ.get('STATE_FILE', '/data/findings.json')
 
 
 def describe_ports(rule):
@@ -92,18 +96,28 @@ def run_scan():
         print(line)
     return combined_regional_findings
 
+def save_findings(findings):
+    # os.makedirs(os.path.dirname(STATE_FILE) or '.', exist_ok=True)
+    with open(STATE_FILE, 'w') as f:
+        json.dump(findings, f, indent=2)
+
 def main():
     combined_regional_findings = run_scan()
-    print(f"Found {len(combined_regional_findings)} rule(s) open to the internet:")
-    for f in combined_regional_findings:
-        line = f"[{f['severity']}] {f['group_id']} ({f['group_name']}, {f['vpc_id']}) {f['ports']} from {f['cidrs']}"
-        if f['services']:
-            line += f" -> exposes {f['services']}"
-        print(line)
+    save_findings(combined_regional_findings)
 
 @app.route("/findings")
 def findings():
-    return jsonify(run_scan())
+    results = run_scan()
+    save_findings(results)
+    return jsonify(results)
+
+@app.route("/findings/last")
+def findings_last():
+    if not os.path.exists(STATE_FILE):
+        return jsonify({"error": "No findings found"}), 404
+    with open(STATE_FILE, 'r') as f:
+        data = json.load(f)
+    return jsonify(data)
 @app.route("/health")
 def health():
     return {"ok":"True"}
