@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: my-container
+          image: cloud-sentinel:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: AWS_DEFAULT_REGION
+              value: us-east-1
+          envFrom:
+            - secretRef:
+                name: aws-creds
+          volumeMounts:
+            - name: sentinel-data
+              mountPath: /data
+      volumes:
+        - name: sentinel-data
+          emptyDir: {}  # Use an emptyDir volume for ephemeral storage
