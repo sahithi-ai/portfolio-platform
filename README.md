@@ -17,5 +17,11 @@ GitHub Actions (OIDC) → Terraform → EKS → Argo CD → app + Prometheus/Gra
 ## What broke
 Empty for now. 
 
+## References
+
+### Kubernetes
+- [Kubernetes Tutorial for Beginners (KodeKloud)](https://kodekloud.com/blog/kubernetes-tutorial-for-beginners-2025/#what-is-kubernetes-quick-refresher)
+- [Kubernetes Architecture Explained (KodeKloud)](https://kodekloud.com/blog/kubernetes-architecture-explained/)
+
 ## Daily log
 2026-10-04 — repo created; README; weak-list: Docker layer caching, Deployment vs Pod, Terraform state.
