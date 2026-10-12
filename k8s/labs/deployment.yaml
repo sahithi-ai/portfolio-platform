@@ -31,4 +31,7 @@ spec:
               mountPath: /data
       volumes:
         - name: sentinel-data
-          emptyDir: {}  # Use an emptyDir volume for ephemeral storage
+          # emptyDir: {}  # Use an emptyDir volume for ephemeral storage
+          persistentVolumeClaim:
+            claimName: cloud-sentinel-pvc
+          
